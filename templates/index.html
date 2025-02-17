@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Multiple AI Agents Demo</title>
+</head>
+<body>
+  <h1>Multiple AI Agents Demo</h1>
+
+  <form id="task-form">
+    <label for="task_type">Task Type:</label>
+    <select id="task_type">
+      <option value="sensor_management">Sensor Management</option>
+      <option value="reasoning">Reasoning</option>
+      <option value="user_interaction">User Interaction</option>
+      <option value="digital_twin">Digital Twin</option>
+      <option value="developer_ops">Developer Ops</option>
+    </select>
+    <br><br>
+
+    <label for="payload">Payload (JSON):</label>
+    <textarea id="payload" rows="4" cols="50">
+{
+  "command": "read_data",
+  "raspberry_pi_id": 1
+}
+    </textarea>
+    <br><br>
+
+    <button type="button" onclick="sendTask()">Send Task</button>
+  </form>
+
+  <br><hr><br>
+
+  <form id="sensor-form">
+    <label for="sensor_payload">Sensor Data Payload (simulate IoT device):</label>
+    <textarea id="sensor_payload" rows="4" cols="50">
+{
+  "temperature": 23.8,
+  "humidity": 42,
+  "air_quality": 115,
+  "raspberry_pi_id": 2
+}
+    </textarea>
+    <br><br>
+    <button type="button" onclick="sendSensorData()">Send Sensor Data</button>
+  </form>
+
+  <div id="response-area" style="margin-top:20px;"></div>
+
+  <script>
+    async function sendTask() {
+      const taskType = document.getElementById("task_type").value;
+      let payload;
+      try {
+        payload = JSON.parse(document.getElementById("payload").value);
+      } catch (e) {
+        alert("Invalid JSON in payload.");
+        return;
+      }
+      const responseArea = document.getElementById("response-area");
+      responseArea.innerText = "Sending task request...";
+
+      try {
+        const response = await fetch("/assign_task", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task_type: taskType, payload })
+        });
+        if (!response.ok) {
+          throw new Error("Failed to assign task: " + response.status);
+        }
+        const data = await response.json();
+        responseArea.innerText = JSON.stringify(data, null, 2);
+      } catch (error) {
+        responseArea.innerText = "Error: " + error.message;
+      }
+    }
+
+    async function sendSensorData() {
+      let payload;
+      try {
+        payload = JSON.parse(document.getElementById("sensor_payload").value);
+      } catch (e) {
+        alert("Invalid JSON in sensor payload.");
+        return;
+      }
+      const responseArea = document.getElementById("response-area");
+      responseArea.innerText = "Sending sensor data...";
+
+      try {
+        const response = await fetch("/sensor_data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+          throw new Error("Failed to send sensor data: " + response.status);
+        }
+        const data = await response.json();
+        responseArea.innerText = JSON.stringify(data, null, 2);
+      } catch (error) {
+        responseArea.innerText = "Error: " + error.message;
+      }
+    }
+  </script>
+</body>
+</html>
