@@ -1,21 +1,23 @@
+#!/usr/bin/env python
 """
 This module reads sensor data from a BME680 sensor connected to a Raspberry Pi
-and sends the data to the local server endpoint (/sensor_data). The server URL
-can be configured via the SENSOR_SERVER_URL environment variable.
+and sends the data to the local server endpoint (/sensor_data) asynchronously.
+It uses aiohttp for non-blocking HTTP requests and implements simple retry logic.
 """
 
 import os
+import asyncio
+import aiohttp
 import time
-import requests
 import logging
 import bme680
+from config import Config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 logger = logging.getLogger(__name__)
 
-# Get server URL from environment or default value
-SERVER_URL = os.environ.get("SENSOR_SERVER_URL", "http://192.168.0.101:5000/sensor_data")
+SERVER_URL = Config.SENSOR_SERVER_URL
 
 logger.info(f"Sending sensor data to: {SERVER_URL}")
 logger.info("Press Ctrl+C to exit!")
@@ -50,37 +52,47 @@ sensor.set_gas_heater_temperature(320)
 sensor.set_gas_heater_duration(150)
 sensor.select_gas_heater_profile(0)
 
-def read_and_send_sensor_data():
+async def send_sensor_data(session, data, retries=3, delay=2):
     """
-    Poll the sensor, format the sensor data, and send it to the server.
+    Sends sensor data to the server using aiohttp with a simple retry mechanism.
     """
-    if sensor.get_sensor_data():
-        output = '{0:.2f} C, {1:.2f} hPa, {2:.2f} %RH'.format(
-            sensor.data.temperature,
-            sensor.data.pressure,
-            sensor.data.humidity
-        )
-        data_payload = {
-            "temperature": sensor.data.temperature,
-            "pressure": sensor.data.pressure,
-            "humidity": sensor.data.humidity
-        }
-        if sensor.data.heat_stable:
-            gas_res = sensor.data.gas_resistance
-            output += f", {gas_res:.2f} Ohms"
-            data_payload["gas"] = gas_res
-
-        logger.info(output)
+    for attempt in range(1, retries + 1):
         try:
-            response = requests.post(SERVER_URL, json=data_payload, timeout=5)
-            logger.info("Server response: " + response.text)
+            async with session.post(SERVER_URL, json=data, timeout=5) as response:
+                text = await response.text()
+                logger.info("Server response: " + text)
+                return text
         except Exception as e:
-            logger.error("Error sending data to server: " + str(e))
+            logger.error(f"Attempt {attempt}: Error sending data to server: {e}")
+            if attempt < retries:
+                await asyncio.sleep(delay)
+    return "Failed after retries."
+
+async def poll_sensor():
+    """
+    Asynchronously polls the sensor data and sends it to the server.
+    Since sensor.get_sensor_data() is blocking, run it in an executor.
+    """
+    loop = asyncio.get_event_loop()
+    async with aiohttp.ClientSession() as session:
+        while True:
+            # Run the blocking sensor read in a thread pool
+            sensor_data_ready = await loop.run_in_executor(None, sensor.get_sensor_data)
+            if sensor_data_ready:
+                data_payload = {
+                    "temperature": sensor.data.temperature,
+                    "pressure": sensor.data.pressure,
+                    "humidity": sensor.data.humidity
+                }
+                if sensor.data.heat_stable:
+                    data_payload["gas"] = sensor.data.gas_resistance
+
+                logger.info(f"Sensor reading: {data_payload}")
+                await send_sensor_data(session, data_payload)
+            await asyncio.sleep(1)  # Polling interval
 
 if __name__ == '__main__':
     try:
-        while True:
-            read_and_send_sensor_data()
-            time.sleep(1)  # Adjust polling interval as needed
+        asyncio.run(poll_sensor())
     except KeyboardInterrupt:
         logger.info("Exiting sensor reading module.")
