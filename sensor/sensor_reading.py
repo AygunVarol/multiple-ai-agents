@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 This module reads sensor data from a BME680 sensor connected to a Raspberry Pi
 and sends the data to the local server endpoint (/sensor_data) asynchronously.
