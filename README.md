@@ -74,8 +74,8 @@ multiple_ai_agents/
 
 1. Clone the repository:
         
-        git clone https://github.com/aygunvarol/multiple_ai_agents.git
-        cd multiple_ai_agents
+        git clone https://github.com/aygunvarol/multiple-ai-agents.git
+        cd multiple-ai-agents
 
 2. Create a virtual environment and activate it:
 
