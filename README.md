@@ -1,8 +1,30 @@
-# Multiple AI Agents Framework for Smart Spaces
+# Multiple AI Agents Framework for Smart Spaces (Newer Version)
 
-This project implements a hierarchical multi-agent system designed for smart spaces. It leverages GPT-based models via LangChain to orchestrate various specialized agents that work together to process sensor data, make decisions, interact with users, simulate digital twin scenarios, and assist developers/operations.
+This repository implements a multi-agent system for smart spaces that integrates GPT-based models (via LangChain) and asynchronous sensor data processing. In this version, the system is designed for indoor environments where multiple IoT devices (e.g., Raspberry Pis with BME680 environmental sensors) send real-time data to a local server. Key enhancements include:
 
-The system is designed for indoor environments where multiple IoT devices—such as Raspberry Pis equipped with environmental sensors (e.g., BME680)—continuously send real-time data to a local server. The Supervisor Agent processes natural language commands from users and delegates tasks to the appropriate specialized agents based on their goals and assigned GPT models.
+- **Asynchronous I/O & Retry Logic:**  
+  The sensor module now uses `asyncio` and `aiohttp` for non-blocking sensor polling and network requests, along with a built-in retry mechanism.
+
+- **Enhanced Configuration Management:**  
+  Configuration is loaded from a YAML file (if present) as well as environment variables, making it easier to customize settings.
+
+- **Dynamic Model Swapping (AutoGen Placeholder):**  
+  The Supervisor Agent provides a method to dynamically update the GPT model used by each agent—paving the way for advanced orchestration (e.g., via AutoGen).
+
+- **Robust Monitoring:**  
+  Integration with Sentry (if a DSN is provided) allows external error monitoring and logging.
+
+- **Asynchronous Sensor Data Handling:**  
+  The BME680 sensor readings are polled asynchronously with retry logic for robust network communication.
+
+- **Flexible Configuration:**  
+  Settings are managed via a YAML configuration file (and environment variables) for easy customization.
+
+- **Dynamic Model Update:**  
+  The Supervisor Agent can update agent models on the fly—ideal for integration with dynamic orchestration frameworks like AutoGen.
+
+- **External Error Monitoring:**  
+  Sentry integration allows for real-time error tracking if configured.
 
 ## Architecture
 
