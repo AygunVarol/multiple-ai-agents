@@ -33,6 +33,13 @@ A minimal web UI (using Flask) allows users to send tasks and simulate sensor da
 
 ## Project Structure
 
+# Multiple AI Agents System
+
+This repository contains a multi-agent system with specialized AI agents managing sensor data, reasoning, user interaction, and digital twin analytics.
+
+## Project Structure
+
+```plaintext
 multiple_ai_agents/
 ├── app.py                         # Main Flask application
 ├── config.py                      # Configuration settings and API keys
@@ -52,6 +59,8 @@ multiple_ai_agents/
 │   └── metrics_manager.py         # Performance metrics logging
 └── templates/
     └── index.html                 # Simple web interface for task and sensor data simulation
+```
+aasdasd
 
 
 
