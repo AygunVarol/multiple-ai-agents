@@ -90,7 +90,17 @@ Configure the following environment variables either in your shell or by creatin
     OPENAI_API_KEY
     SENSOR_SERVER_URL (e.g., http://192.168.0.101:5000/sensor_data)
 
+## How to use?
 
+1. Run the Flask application:
+
+        python app.py
+
+2. Access the Web Interface:
+
+Open your browser and navigate to http://localhost:5000 to view the simple web UI. You can:
+- Send tasks to the system (e.g., sensor management, reasoning, etc.).
+- Simulate sensor data input from an IoT device.
 
 
 
