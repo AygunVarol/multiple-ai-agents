@@ -74,8 +74,21 @@ multiple_ai_agents/
         cd multiple_ai_agents
 
 2. Create a virtual environment and activate it:
+
+        python -m venv venv
+        source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 3. Install dependencies:
+
+        pip install -r requirements.txt
+
 4. Set environment variables:
+
+Configure the following environment variables either in your shell or by creating a .env file:
+
+    SECRET_KEY
+    OPENAI_API_KEY
+    SENSOR_SERVER_URL (e.g., http://192.168.0.101:5000/sensor_data)
 
 
 
