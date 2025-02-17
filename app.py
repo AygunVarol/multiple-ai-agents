@@ -1,3 +1,5 @@
+# app.py
+import os
 from flask import Flask, request, jsonify, render_template
 import threading
 
@@ -7,13 +9,18 @@ from services.background_worker import TaskQueue
 from services.log_manager import log_manager
 from services.metrics_manager import metrics_manager
 
+# Robust Monitoring: Initialize Sentry if SENTRY_DSN is set
+if os.environ.get("SENTRY_DSN"):
+    import sentry_sdk
+    sentry_sdk.init(dsn=os.environ["SENTRY_DSN"])
+
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Initialize the Supervisor Agent (which creates the specialized agents)
+# Initialize the Supervisor Agent
 supervisor_agent = SupervisorAgent()
 
-# Start a background task queue if needed (e.g., for periodic tasks)
+# Start a background task queue if needed
 task_queue = TaskQueue()
 worker_thread = threading.Thread(target=task_queue.run, daemon=True)
 worker_thread.start()
@@ -55,7 +62,6 @@ def sensor_data():
     """
     data = request.get_json() or {}
     try:
-        # Forward the sensor data to the Sensor Agent for processing
         result = supervisor_agent.sensor_agent.process_sensor_data(data)
         return jsonify({"result": result}), 200
     except Exception as e:
