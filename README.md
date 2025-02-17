@@ -8,17 +8,17 @@ The system is designed for indoor environments where multiple IoT devices—such
 
 - Multi-Agent Architecture:
 
-    Supervisor Agent: Delegates tasks to five specialized agents.
-    
-    Sensor Agent: Reads and cleans sensor data from Raspberry Pis.
-    
-    Reasoning Agent: Evaluates sensor inputs and decides on environmental controls.
-    
-    User Interaction Agent: Communicates with users, validates commands, and provides feedback.
-    
-    Digital Twin Agent: Monitors system performance, analyzes trends, and predicts adjustments.
-    
-    Developer/Operator Agent: Monitors technical issues and assists with debugging and maintenance.
+        Supervisor Agent: Delegates tasks to five specialized agents.
+        
+        Sensor Agent: Reads and cleans sensor data from Raspberry Pis.
+        
+        Reasoning Agent: Evaluates sensor inputs and decides on environmental controls.
+        
+        User Interaction Agent: Communicates with users, validates commands, and provides feedback.
+        
+        Digital Twin Agent: Monitors system performance, analyzes trends, and predicts adjustments.
+        
+        Developer/Operator Agent: Monitors technical issues and assists with debugging and maintenance.
 
 - Real-Time Sensor Data Ingestion:
 
