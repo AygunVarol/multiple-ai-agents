@@ -10,8 +10,9 @@ class SupervisorAgent:
     """
     Supervisor Agent:
     - Makes decisions and assigns tasks to specialized agents.
-    - Collects and validates sensor data from the Sensor Agent.
+    - Collects sensor data from the Sensor Agent.
     - Coordinates system-wide actions.
+    - Supports dynamic model swapping for agents (placeholder for AutoGen integration).
     """
     def __init__(self):
         # Instantiate specialized GPT-based agents
@@ -35,3 +36,26 @@ class SupervisorAgent:
             return self.developer_agent.perform_dev_ops(payload)
         else:
             raise ValueError(f"Unknown task type: {task_type}")
+
+    def update_agent_model(self, agent_name, new_model):
+        """
+        Dynamically update the GPT model assigned to a given agent.
+        This is a placeholder for integration with AutoGen orchestration.
+        """
+        if agent_name == "sensor":
+            self.sensor_agent.model = self.sensor_agent.model.__class__(model_name=new_model, temperature=0.3)
+            log_manager.add_log(f"Sensor Agent model updated to {new_model}")
+        elif agent_name == "reasoning":
+            self.reasoning_agent.model = self.reasoning_agent.model.__class__(model_name=new_model, temperature=0.7)
+            log_manager.add_log(f"Reasoning Agent model updated to {new_model}")
+        elif agent_name == "user_interaction":
+            self.user_interaction_agent.model = self.user_interaction_agent.model.__class__(model_name=new_model, temperature=0.5)
+            log_manager.add_log(f"User Interaction Agent model updated to {new_model}")
+        elif agent_name == "digital_twin":
+            self.digital_twin_agent.model = self.digital_twin_agent.model.__class__(model_name=new_model, temperature=0.6)
+            log_manager.add_log(f"Digital Twin Agent model updated to {new_model}")
+        elif agent_name == "developer":
+            self.developer_agent.model = self.developer_agent.model.__class__(model_name=new_model, temperature=0.4)
+            log_manager.add_log(f"Developer Agent model updated to {new_model}")
+        else:
+            raise ValueError(f"Unknown agent name: {agent_name}")
