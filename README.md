@@ -68,6 +68,15 @@ multiple_ai_agents/
 
 ## Installation
 
+1. Clone the repository:
+        
+        git clone https://github.com/yourusername/multiple_ai_agents.git
+        cd multiple_ai_agents
+
+2. Create a virtual environment and activate it:
+3. Install dependencies:
+4. Set environment variables:
+
 
 
 
