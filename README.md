@@ -1,120 +1,271 @@
-# Multiple AI Agents Framework for Smart Spaces
+# Multi-Agent LLM Smart Environment
 
-This project implements a hierarchical multi-agent system designed for smart spaces. It leverages GPT-based models via LangChain to orchestrate various specialized agents that work together to process sensor data, make decisions, interact with users, simulate digital twin scenarios, and assist developers/operations.
+A simplified multi-agent framework for smart indoor environments using LLMs and IoT sensors, as presented in the IEEE IoT Magazine paper.
 
-The system is designed for indoor environments where multiple IoT devices—such as Raspberry Pis equipped with environmental sensors (e.g., BME680)—continuously send real-time data to a local server. The Supervisor Agent processes natural language commands from users and delegates tasks to the appropriate specialized agents based on their goals and assigned GPT models.
+## Architecture Overview
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   RPi-Office    │    │   RPi-Kitchen   │    │  RPi-Hallway    │
+│ (Location Agent)│    │ (Location Agent)│    │ (Location Agent)│
+│   BME680 Sensor │    │   BME680 Sensor │    │   BME680 Sensor │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          └──────────────────────┼──────────────────────┘
+                                 │
+                    ┌─────────────▼──────────────┐
+                    │     Laptop/Server          │
+                    │   (Supervisor Agent)       │
+                    │  LLaMA 3.2 1B + OpenAI    │
+                    └────────────────────────────┘
+```
+
+## Project Structure
+
+```
+smart-environment-llm/
+├── README.md
+├── requirements.txt
+├── config.py
+├── laptop/                    # Run on laptop/server
+│   ├── supervisor_agent.py    # Main supervisor
+│   ├── app.py                # Flask server
+│   └── utils.py              # Helper functions
+├── raspberry_pi/             # Deploy on each RPi
+│   ├── location_agent.py     # Location-specific agent
+│   ├── sensor_reader.py      # BME680 sensor interface
+│   └── config_rpi.py         # RPi configuration
+└── shared/                   # Shared utilities
+    ├── communication.py      # REST API communication
+    └── models.py            # Data models
+```
+
+## Quick Start
+
+### 1. Laptop/Server Setup (Supervisor Agent)
+
+```bash
+# Clone and setup
+git clone <repository-url>
+cd smart-environment-llm
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set environment variables
+export OPENAI_API_KEY="your-openai-key"
+export GROQ_API_KEY="your-groq-key"  # Optional
+
+# Run supervisor
+cd laptop
+python app.py
+```
+
+### 2. Raspberry Pi Setup (Location Agents)
+
+```bash
+# On each RPi, install dependencies
+pip install -r requirements.txt
+
+# Set location-specific environment
+export LOCATION="office"  # or "kitchen" or "hallway"
+export SUPERVISOR_URL="http://192.168.1.100:5000"  # Laptop IP
+
+# Run location agent
+cd raspberry_pi
+python location_agent.py
+```
+
+## Configuration
+
+### `config.py` (Laptop)
+```python
+import os
+
+class Config:
+    # API Keys
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    
+    # Models
+    SUPERVISOR_MODEL = "gpt-4o-mini"
+    LOCAL_MODEL = "llama3.2:1b"  # Ollama model
+    
+    # Server
+    HOST = "0.0.0.0"
+    PORT = 5000
+    
+    # Thresholds
+    CPU_THRESHOLD = 70  # % for load balancing
+    LATENCY_THRESHOLD = 2000  # ms for urgency
+```
+
+### `config_rpi.py` (Raspberry Pi)
+```python
+import os
+
+class RPiConfig:
+    LOCATION = os.getenv("LOCATION", "office")
+    SUPERVISOR_URL = os.getenv("SUPERVISOR_URL", "http://192.168.1.100:5000")
+    
+    # Sensor settings
+    SENSOR_INTERVAL = 1  # seconds
+    
+    # Local model (if using Ollama on RPi)
+    LOCAL_MODEL = "llama3.2:1b"
+    USE_LOCAL_MODEL = True
+```
+
+## Key Components
+
+### Supervisor Agent (Laptop)
+- **Task Orchestration**: Distributes tasks across location agents
+- **Load Balancing**: Monitors CPU usage and offloads to RPis when >70%
+- **Failover Management**: Handles RPi failures and leader election
+- **Cloud Integration**: Uses OpenAI/Groq for complex reasoning tasks
+
+### Location Agents (Raspberry Pi)
+- **Environmental Monitoring**: BME680 sensor data collection
+- **Local Inference**: Location-specific LLM processing
+- **Data Preprocessing**: Anomaly detection and data cleaning
+- **Autonomous Operation**: Can elect leader if supervisor fails
+
+## API Endpoints
+
+### Supervisor (Laptop) - Port 5000
+
+```
+POST /api/task               # Assign task to location agent
+GET  /api/status             # System status
+POST /api/sensor_data        # Receive sensor data from RPis
+GET  /api/agents             # List active agents
+```
+
+### Location Agent (RPi) - Port 8000
+
+```
+POST /api/process            # Process local task
+GET  /api/health             # Agent health status
+GET  /api/sensor             # Current sensor readings
+POST /api/leader_election    # Participate in leader election
+```
+
+## Usage Examples
+
+### 1. Environmental Query
+```bash
+curl -X POST http://192.168.1.100:5000/api/task \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task": "analyze_air_quality",
+    "location": "office",
+    "urgency": "low"
+  }'
+```
+
+### 2. Real-time Monitoring
+```bash
+# Get all sensor readings
+curl http://192.168.1.100:5000/api/status
+
+# Get specific location data
+curl http://192.168.1.101:8000/api/sensor  # Office RPi
+```
+
+## Deployment Scenarios
+
+### S1: Normal Operation
+- Supervisor distributes tasks based on location expertise
+- Each RPi processes location-specific queries
+- Results aggregated and returned to user
+
+### S2: Supervisor Failure
+- RPis detect supervisor offline
+- Leader election among RPis
+- Elected leader takes over coordination
+
+### S3: High Load Balancing
+- Supervisor monitors CPU usage
+- When >70%, offloads inference to RPis
+- Dynamic task redistribution
+
+## Dependencies
+
+### `requirements.txt`
+```
+flask>=2.3.0
+requests>=2.31.0
+langchain>=0.1.0
+openai>=1.0.0
+groq>=0.4.0
+bme680>=1.1.0
+psutil>=5.9.0
+threading>=1.0.0
+```
+
+## Hardware Requirements
+
+### Laptop/Server (Supervisor)
+- CPU: Intel i5+ or equivalent
+- RAM: 8GB minimum
+- Network: WiFi/Ethernet
+- OS: Linux/Windows/macOS
+
+### Raspberry Pi (Location Agents)
+- Model: RPi 4/5 (4GB+ RAM recommended)
+- Sensor: Bosch BME680 (via I2C)
+- Storage: 32GB+ microSD
+- OS: Raspberry Pi OS
+
+## Running the System
+
+1. **Start Supervisor** (on laptop):
+   ```bash
+   cd laptop && python app.py
+   ```
+
+2. **Start Location Agents** (on each RPi):
+   ```bash
+   cd raspberry_pi && python location_agent.py
+   ```
+
+3. **Verify Connection**:
+   ```bash
+   curl http://192.168.1.100:5000/api/status
+   ```
 
 ## Features
 
-- Multi-Agent Architecture:
+- ✅ Multi-agent coordination
+- ✅ Dynamic load balancing  
+- ✅ Autonomous failover
+- ✅ Location-aware processing
+- ✅ Real-time sensor monitoring
+- ✅ REST API communication
+- ✅ Edge-cloud collaboration
 
-        Supervisor Agent: Delegates tasks to five specialized agents.
-        
-        Sensor Agent: Reads and cleans sensor data from Raspberry Pis.
-        
-        Reasoning Agent: Evaluates sensor inputs and decides on environmental controls.
-        
-        User Interaction Agent: Communicates with users, validates commands, and provides feedback.
-        
-        Digital Twin Agent: Monitors system performance, analyzes trends, and predicts adjustments.
-        
-        Developer/Operator Agent: Monitors technical issues and assists with debugging and maintenance.
+## Performance Metrics
 
-- Real-Time Sensor Data Ingestion:
+The system tracks:
+- **Response Latency**: Task completion time
+- **CPU Utilization**: Load balancing decisions
+- **Network Overhead**: Communication efficiency  
+- **Accuracy**: Location-specific inference quality
+- **Energy Consumption**: RPi power usage
 
-IoT devices send data via HTTP POST to a dedicated /sensor_data endpoint. The Sensor Agent processes this data using a GPT model via LangChain.
+## License
 
-- API-Based GPT Integration:
+MIT License - See LICENSE file for details.
 
-All agents utilize GPT models (via LangChain) accessed by API calls. Model assignments are configurable via environment variables.
+## Citation
 
-- Background Task Management:
+If you use this code in your research, please cite:
 
-A simple background worker supports asynchronous operations, such as periodic sensor polling.
-
-- Web Interface:
-
-A minimal web UI (using Flask) allows users to send tasks and simulate sensor data input.
-
-## Project Structure
-
-# Multiple AI Agents System
-
-This repository contains a multi-agent system with specialized AI agents managing sensor data, reasoning, user interaction, and digital twin analytics.
-
-## Project Structure
-
-```plaintext
-multiple_ai_agents/
-├── app.py                         # Main Flask application
-├── config.py                      # Configuration settings and API keys
-├── sensor/
-│   └── sensor_reading.py          # Code for reading BME680 sensor data and sending to server
-├── supervisor/
-│   └── supervisor_agent.py        # Supervisor Agent that delegates tasks
-├── agents/                        # Specialized GPT-based agents
-│   ├── sensor_agent.py            # LLM Agent 1: Sensor Manager
-│   ├── reasoning_agent.py         # LLM Agent 2: Reasoning and Decision-Making
-│   ├── user_interaction_agent.py  # LLM Agent 3: User Interaction and Validation
-│   ├── digital_twin_agent.py      # LLM Agent 4: Digital Twin Agent (Monitoring, Analytics, Prediction)
-│   └── developer_agent.py         # LLM Agent 5: Developer/Operator Agent
-├── services/                      # Support services
-│   ├── background_worker.py       # Background task queue for asynchronous operations
-│   ├── log_manager.py             # In-memory logging service
-│   └── metrics_manager.py         # Performance metrics logging
-└── templates/
-    └── index.html                 # Simple web interface for task and sensor data simulation
+```bibtex
+@article{varol2025multiagent,
+  title={Multiple AI/LLM Agent Deployments in Smart Environments},
+  author={Varol, Ayg{\"u}n and Motlagh, Naser Hossein and Leino, Mirka and Virkki, Johanna},
+  journal={IEEE Internet of Things Magazine},
+  year={2025}
+}
 ```
-
-## Installation
-
-1. Clone the repository:
-        
-        git clone https://github.com/aygunvarol/multiple-ai-agents.git
-        cd multiple-ai-agents
-
-2. Create a virtual environment and activate it:
-
-        python -m venv venv
-        source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-3. Install dependencies:
-
-        pip install -r requirements.txt
-
-4. Set environment variables:
-
-Configure the following environment variables either in your shell or by creating a .env file:
-
-    SECRET_KEY
-    OPENAI_API_KEY
-    SENSOR_SERVER_URL (e.g., http://192.168.0.101:5000/sensor_data)
-
-## How to use?
-
-1. Run the Flask application:
-
-        python app.py
-
-2. Access the Web Interface:
-
-Open your browser and navigate to http://localhost:5000 to view the simple web UI. You can:
-- Send tasks to the system (e.g., sensor management, reasoning, etc.).
-- Simulate sensor data input from an IoT device.
-
-## Usage Instructions
-
-### Running Individual Scenarios
-
-```bash
-# Run Scenario 1: Normal Operation
-python scenarios/run_scenarios.py --scenario S1 --iterations 5 --duration 300
-
-# Run Scenario 2: Failover
-python scenarios/run_scenarios.py --scenario S2 --iterations 5 --duration 600
-
-# Run Scenario 3: Load Balancing  
-python scenarios/run_scenarios.py --scenario S3 --iterations 5 --duration 300
-
-# Run all scenarios
-python scenarios/run_scenarios.py --scenario all --iterations 10 --duration 300
