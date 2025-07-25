@@ -4,10 +4,6 @@ This project implements a hierarchical multi-agent system designed for smart spa
 
 The system is designed for indoor environments where multiple IoT devices—such as Raspberry Pis equipped with environmental sensors (e.g., BME680)—continuously send real-time data to a local server. The Supervisor Agent processes natural language commands from users and delegates tasks to the appropriate specialized agents based on their goals and assigned GPT models.
 
-## Architecture
-
-![LLM Agent2s](https://github.com/user-attachments/assets/f9d214cd-8109-4504-99cc-ebb8b2f59f7c)
-
 ## Features
 
 - Multi-Agent Architecture:
@@ -105,3 +101,20 @@ Configure the following environment variables either in your shell or by creatin
 Open your browser and navigate to http://localhost:5000 to view the simple web UI. You can:
 - Send tasks to the system (e.g., sensor management, reasoning, etc.).
 - Simulate sensor data input from an IoT device.
+
+## Usage Instructions
+
+### Running Individual Scenarios
+
+```bash
+# Run Scenario 1: Normal Operation
+python scenarios/run_scenarios.py --scenario S1 --iterations 5 --duration 300
+
+# Run Scenario 2: Failover
+python scenarios/run_scenarios.py --scenario S2 --iterations 5 --duration 600
+
+# Run Scenario 3: Load Balancing  
+python scenarios/run_scenarios.py --scenario S3 --iterations 5 --duration 300
+
+# Run all scenarios
+python scenarios/run_scenarios.py --scenario all --iterations 10 --duration 300
